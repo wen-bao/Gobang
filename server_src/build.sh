@@ -4,4 +4,4 @@ javac -encoding utf-8 socket/*.java -d ../data/
 cd ..
 jar -cvfm data/server.jar MANIFEST.MF -C data/ .
 rm -rf data/socket
-g++ -w src/run.c -o run
+gcc -w src/run.c -o run
