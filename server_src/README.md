@@ -6,7 +6,7 @@ server.conf配置文件
 
 PORT：指定端口
 
-## 编译
+## 运行
 
 //windows
 build.bat
@@ -14,10 +14,8 @@ build.bat
 //linux
 ./build.sh
 
-## 运行
-
-//windows
-run.exe
-
-//linux
 ./run
+
+## 其他
+
+目前linux体验更好，windows服务还在开发中。。。
