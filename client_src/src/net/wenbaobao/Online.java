@@ -1,10 +1,7 @@
 package net.wenbaobao;
 
 import java.awt.Color;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
@@ -18,6 +15,9 @@ public class Online {
     MakeChessManual record = null;
     Rule rule = null;
     JSplitPane split = null;
+
+    static String host = "47.95.120.196";
+    static int port    = 5555;
 
     public Online(FiveBoard board, MakeChessManual record) throws UnknownHostException, IOException {
 
@@ -33,9 +33,10 @@ public class Online {
     public void Client() throws UnknownHostException, IOException {
 
         // 要连接的服务端IP地址和端口
-        String host = "47.95.120.196";
+        //String host = "47.95.120.196";
         //String  host = "127.0.0.1";
-        int port = 5555;
+        //int port = 5555;
+        getServer();
         // 与服务端建立连接
         final Socket socket = new Socket(host, port);
         // 建立连接后获得输出流
@@ -51,7 +52,7 @@ public class Online {
                     if(board.lianjichat.length() > 0) {
                         try {
                             socket.getOutputStream().write(pack(id + ":1:" + board.lianjichat));
-                            Log(id + ":1:" + board.lianjichat);
+                            //Log(id + ":1:" + board.lianjichat);
                             board.lianjichat = "";
                         } catch (UnsupportedEncodingException e) {
                             // TODO Auto-generated catch block
@@ -61,14 +62,14 @@ public class Online {
                             e.printStackTrace();
                         }
                     } else {
-                        Log(board.lianjichat + "none");
+                        //Log(board.lianjichat + "none");
                         //board.lianjichat = "";
                     }
 
                     if(board.lianjiX != -1 && board.lianjiY != -1) {
                         try {
                             socket.getOutputStream().write(pack(id + ":2:" + board.lianjiX + ":" + board.lianjiY));
-                            Log(id + ":2:" + board.lianjiX + ":" + board.lianjiY);
+                            //Log(id + ":2:" + board.lianjiX + ":" + board.lianjiY);
                             board.lianjiX = -1;
                             board.lianjiY = -1;
                         } catch (UnsupportedEncodingException e) {
@@ -80,7 +81,7 @@ public class Online {
                         }
 
                     } else {
-                        Log(board.lianjiX + "," + board.lianjiY);
+                        //Log(board.lianjiX + "," + board.lianjiY);
                         //board.lianjiX = -1;
                         //board.lianjiY = -1;
                     }
@@ -97,7 +98,7 @@ public class Online {
             public void run() {
                 try {
                     id = getInfo(socket);
-                    System.out.println("您已经进入游戏,您的游戏id号码为" + id);
+                    //System.out.println("您已经进入游戏,您的游戏id号码为" + id);
 
                     while (true) {
                         try {
@@ -161,6 +162,29 @@ public class Online {
         });
         getThread.start();
         sendThread.start();
+
+    }
+
+    public static void getServer() throws IOException{
+        FileInputStream fis = new FileInputStream("client.conf");
+        InputStreamReader isr = new InputStreamReader(fis, "utf-8");
+        BufferedReader br = new BufferedReader(isr);
+
+        String line = "";
+        String arr[] = null;
+        
+        for(int i = 0; i < 2; ++i) {
+            if((line = br.readLine()) != null) {
+                arr = line.split("=");
+                if(i == 0) {
+                    host = arr[1];
+                } else {
+                    port = Integer.parseInt(arr[1]);
+                }
+            } else {
+                System.out.println("Read client.conf failed!");
+            }
+        }
 
     }
 

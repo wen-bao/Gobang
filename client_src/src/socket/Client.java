@@ -1,11 +1,8 @@
 package socket;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
+import java.nio.Buffer;
 import java.util.Scanner;
 
 public class Client {
@@ -14,11 +11,15 @@ public class Client {
 
     private static String id;
 
+    // 要连接的服务端IP地址和端口
+    static String host = "47.95.120.196";
+    static int port = 5555;
+
     public static void main(String[] args) throws UnknownHostException, IOException {
 
-        // 要连接的服务端IP地址和端口
-        String host = "47.95.120.196";
-        int port = 5555;
+        getServer();
+
+        System.out.println(host + " " + port);
         // 与服务端建立连接
         final Socket socket = new Socket(host, port);
         // 建立连接后获得输出流
@@ -79,6 +80,29 @@ public class Client {
         });
         getThread.start();
         sendThread.start();
+
+    }
+
+    public static void getServer() throws IOException{
+        FileInputStream fis = new FileInputStream("client.conf");
+        InputStreamReader isr = new InputStreamReader(fis, "utf-8");
+        BufferedReader br = new BufferedReader(isr);
+
+        String line = "";
+        String arr[] = null;
+        
+        for(int i = 0; i < 2; ++i) {
+            if((line = br.readLine()) != null) {
+                arr = line.split("=");
+                if(i == 0) {
+                    host = arr[1];
+                } else {
+                    port = Integer.parseInt(arr[1]);
+                }
+            } else {
+                System.out.println("Read client.conf failed!");
+            }
+        }
 
     }
 

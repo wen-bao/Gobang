@@ -1,15 +1,13 @@
 package socket;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.file.FileSystem;
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-
 
 // 发送消息的格式被规定为 userId:mode:[xx]
 
@@ -26,10 +24,10 @@ public class Server {
 
 	public static void main(String[] args) throws UnknownHostException, IOException {
 
-		int port = 5555;
-		ServerSocket server = new ServerSocket(port);
+		// int port = 5555;
+		ServerSocket server = new ServerSocket(getPort());
 
-		System.out.println("server将一直等待连接的到来");
+		// System.out.println("server将一直等待连接的到来");
 
 		BlockingQueue<Thread> list = new ArrayBlockingQueue<Thread>(10);
 		final ArrayList<Person> persons = new ArrayList<Person>(10);
@@ -47,9 +45,9 @@ public class Server {
 
 			if (other != null) {
 				speak(sock, "0:1:为您找到对手，开始游戏");
-				speak(sock, "0:2:0");//黑棋
+				speak(sock, "0:2:0");// 黑棋
 				speak(other.getSocket(), "0:1:为您找到对手，开始游戏");
-				speak(other.getSocket(), "0:2:1");//白棋
+				speak(other.getSocket(), "0:2:1");// 白棋
 				p.setOtherPerson(other);
 				other.setOtherPerson(p);
 			}
@@ -84,7 +82,7 @@ public class Server {
 
 								speak(other.getSocket(), info);
 							}
-							System.out.println(info);
+							// System.out.println(info);
 						}
 
 					} catch (IOException e) {
@@ -94,7 +92,7 @@ public class Server {
 
 						try {
 							speak(p.getOtherPerson().getSocket(), "0:1:你的对手离开了游戏");
-						} catch (UnsupportedEncodingException e1){
+						} catch (UnsupportedEncodingException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						} catch (IOException e1) {
@@ -112,6 +110,29 @@ public class Server {
 
 		}
 
+	}
+
+	public static int getPort() throws IOException {
+
+		FileInputStream fis = new FileInputStream("server.conf");
+		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+		BufferedReader br = new BufferedReader(isr);
+		String line = "";
+		String arrs[] = null;
+		int port = 0;
+
+		if ((line = br.readLine()) != null) {
+			arrs = line.split("=");
+			port = Integer.parseInt(arrs[1]);
+			//System.out.println(arrs[0] + " " + arrs[1]);
+		} else {
+			System.out.println("Read server.conf failed!");
+		}
+
+		br.close();
+		isr.close();
+		fis.close();
+		return port;
 	}
 
 	// 读取输入流

@@ -14,6 +14,7 @@ public class Music {
     public void play() {
         try {
             AudioInputStream ais = AudioSystem.getAudioInputStream(Music.class.getResource("/backMusic.wav"));
+			//System.out.println(Music.class.getResource("/backMusic.wav"));
             AudioFormat aif = ais.getFormat();
             //System.out.println(aif);
 
