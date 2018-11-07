@@ -5,9 +5,11 @@
 ### 编译
 
 //windows
+
 build.bat
 
-///linux
+//linux
+
 ./build.sh
 
 ### 运行
