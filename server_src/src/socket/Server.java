@@ -17,9 +17,9 @@ import java.util.concurrent.*;
 //userID：1：xx 聊天
 //userID：2：x：y （x，y）处落子
 
-public class server2 {
+public class Server {
     public static void main(String[] args) throws IOException {
-        new server2().go();
+        new Server().go();
     }
 
     final static String charset = "GB2312";
