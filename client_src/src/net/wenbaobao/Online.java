@@ -8,7 +8,6 @@ import java.util.Scanner;
 import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 
-
 public class Online {
 
     FiveBoard board = null;
@@ -16,80 +15,36 @@ public class Online {
     Rule rule = null;
     JSplitPane split = null;
 
+    BufferedReader reader;
+    public PrintWriter writer;
+
     static String host = "47.95.120.196";
-    static int port    = 5555;
+    static int port = 5555;
 
     public Online(FiveBoard board, MakeChessManual record) throws UnknownHostException, IOException {
 
-        this.board 	= board;
+        this.board = board;
         this.record = record;
+        board.online = this;
         Client();
     }
 
     final static String charset = "GB2312";
 
-    private static String id;
+    public static String id;
 
     public void Client() throws UnknownHostException, IOException {
-
-        // 要连接的服务端IP地址和端口
-        //String host = "47.95.120.196";
-        //String  host = "127.0.0.1";
-        //int port = 5555;
         getServer();
         // 与服务端建立连接
         final Socket socket = new Socket(host, port);
+
+        InputStreamReader streamReader = new InputStreamReader(socket.getInputStream());
+        reader = new BufferedReader(streamReader);
+        writer = new PrintWriter(socket.getOutputStream());
+
         // 建立连接后获得输出流
         OutputStream outputStream = socket.getOutputStream();
 
-        // 发送消息进程
-        Thread sendThread = new Thread(new Runnable() {
-
-            public void run() {
-                //Scanner sc = new Scanner(System.in);
-                while (true) {
-
-                    if(board.lianjichat.length() > 0) {
-                        try {
-                            socket.getOutputStream().write(pack(id + ":1:" + board.lianjichat));
-                            //Log(id + ":1:" + board.lianjichat);
-                            board.lianjichat = "";
-                        } catch (UnsupportedEncodingException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                    } else {
-                        //Log(board.lianjichat + "none");
-                        //board.lianjichat = "";
-                    }
-
-                    if(board.lianjiX != -1 && board.lianjiY != -1) {
-                        try {
-                            socket.getOutputStream().write(pack(id + ":2:" + board.lianjiX + ":" + board.lianjiY));
-                            //Log(id + ":2:" + board.lianjiX + ":" + board.lianjiY);
-                            board.lianjiX = -1;
-                            board.lianjiY = -1;
-                        } catch (UnsupportedEncodingException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-
-                    } else {
-                        //Log(board.lianjiX + "," + board.lianjiY);
-                        //board.lianjiX = -1;
-                        //board.lianjiY = -1;
-                    }
-
-                }
-
-            }
-        });
 
         // 接受消息的进程
         Thread getThread = new Thread(new Runnable() {
@@ -97,49 +52,58 @@ public class Online {
             @Override
             public void run() {
                 try {
-                    id = getInfo(socket);
-                    //System.out.println("您已经进入游戏,您的游戏id号码为" + id);
+                    // id = getInfo(socket);
+                    // System.out.println("您已经进入游戏,您的游戏id号码为" + id);
 
                     while (true) {
                         try {
-                            String info = getInfo(socket);
+                            String info = reader.readLine();
+                            if(info == null) continue;
 
-                            String  s[] = info.split(":");
+                            String s[] = info.split(":");
 
-                            if("0".equals(s[0])) {
-                                if("1".equals(s[1])) {
+                            if ("-1".equals(s[0])) { // 来自系统
+                                if ("0".equals(s[1])) { // 分配id
+                                    id = s[2];
+                                    board.OnlineId = id;
+                                } else if ("1".equals(s[1])) { // 系统消息
                                     JOptionPane.showConfirmDialog(null, s[2]);
-                                    //Object[] options = {"新游戏", "退出", "取消"};
-                                    //JOptionPane.showOptionDialog(null, s[2], "提示", JOptionPane.YES_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
-                                } else {
-                                    if("0".equals(s[2])) {
-                                        board.personColor 	= Color.black;
+                                    // Object[] options = {"新游戏", "退出", "取消"};
+                                    // JOptionPane.showOptionDialog(null, s[2], "提示", JOptionPane.YES_OPTION, 
+                                    // OptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+                                } else if ("2".equals(s[1])) { // 分配棋子颜色
+                                    board.onlineStart = true;
+                                    if ("0".equals(s[2])) {
+                                        board.personColor = Color.black;
                                         board.strPersonColor = "black";
-                                        board.otherColor 	= Color.white;
+                                        board.otherColor = Color.white;
                                         board.strOtherColor = "white";
-                                        board.waitOther     = false;
+                                        board.waitOther = false;
                                     } else {
-                                        board.personColor 	= Color.white;
+                                        board.personColor = Color.white;
                                         board.strPersonColor = "white";
-                                        board.otherColor 	= Color.black;
+                                        board.otherColor = Color.black;
                                         board.strOtherColor = "black";
-                                        board.waitOther		= true;
+                                        board.waitOther = true;
                                     }
+                                } else { // 退出
+                                    JOptionPane.showConfirmDialog(null, "对手退出游戏");
+                                    board.onlineEnd = true;
                                 }
-                            } else {
+                            } else { // 来自对手
                                 Log("PersonID");
                                 if ("1".equals(s[1])) {
-                                    record.chat.append(s[2]);
+                                    record.chat.append(s[2]+"\n");
                                 } else {
                                     int xx = Integer.valueOf(s[2]);
                                     int yy = Integer.valueOf(s[3]);
                                     board.rule.movePieceRule(board.piece[xx][yy], xx, yy);
                                     board.setPiece(xx, yy, board.strOtherColor, board.otherColor);
-                                    board.step ++;
+                                    board.step++;
                                     board.waitOther = false;
-                                    //if(board.hadWin) {
-                                    //JOptionPane.showMessageDialog(null, board.strOtherColor + "胜利！");
-                                    //}
+                                    // if(board.hadWin) {
+                                    // JOptionPane.showMessageDialog(null, board.strOtherColor + "胜利！");
+                                    // }
                                 }
                             }
                             System.out.println(info);
@@ -148,35 +112,27 @@ public class Online {
                         }
 
                     }
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                // TODO Auto-generated method stub
-                catch (Exception e1) {
-                    // TODO Auto-generated catch block
+                } catch (Exception e1) {
                     e1.printStackTrace();
                 }
 
             }
         });
         getThread.start();
-        sendThread.start();
-
     }
 
-    public static void getServer() throws IOException{
+    public static void getServer() throws IOException {
         FileInputStream fis = new FileInputStream("client.conf");
         InputStreamReader isr = new InputStreamReader(fis, "utf-8");
         BufferedReader br = new BufferedReader(isr);
 
         String line = "";
         String arr[] = null;
-        
-        for(int i = 0; i < 2; ++i) {
-            if((line = br.readLine()) != null) {
+
+        for (int i = 0; i < 2; ++i) {
+            if ((line = br.readLine()) != null) {
                 arr = line.split("=");
-                if(i == 0) {
+                if (i == 0) {
                     host = arr[1];
                 } else {
                     port = Integer.parseInt(arr[1]);
@@ -191,42 +147,6 @@ public class Online {
     public static void Log(String str) {
         System.out.println(str);
     }
-
-    // 读取输入流
-    public static String read(InputStream in, int begin, int len) throws IOException {
-
-        byte[] b = new byte[1024];
-        in.read(b, 0, len);
-        return new String(b, 0, len, charset);
-
-    }
-
-    public static byte[] pack(String info) throws UnsupportedEncodingException {
-        byte b[] = info.getBytes(charset);
-        String len = b.length + "";
-        while (len.length() < 8) {
-            len = "0" + len;
-        }
-
-        String s = len + info;
-
-        return s.getBytes(charset);
-
-    }
-
-    // 从socket中获取打包过来的数据，先获取长度，再获取真正的内容
-    public static String getInfo(Socket socket) throws Exception {
-
-        InputStream in = socket.getInputStream();
-        byte b[] = new byte[1024];
-
-        String len = read(in, 0, 8);
-
-        String info = read(in, 0, Integer.valueOf(len));
-
-        return info;
-    }
-
 
     public void runOver(String message) {
         JOptionPane.showMessageDialog(null, message);

@@ -1,204 +1,191 @@
 package socket;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.nio.file.FileSystem;
-import java.util.ArrayList;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 // 发送消息的格式被规定为 userId:mode:[xx]
 
-//系统id为0
-//0：1：xx 系统消息
-//0：2：0  系统分配黑棋    0：2：1   系统分配白棋
+//系统id为-1
+//-1: 0: xx 分配id
+//-1：1：xx 系统消息
+//-1：2：0  系统分配黑棋    -1：2：1   系统分配白棋
+//-1:-1    退出
 
 //用户id为大于零的整数
 //userID：1：xx 聊天
 //userID：2：x：y （x，y）处落子
 
-public class Server {
-	final static String charset = "GB2312";
+public class server2 {
+    public static void main(String[] args) throws IOException {
+        new server2().go();
+    }
 
-	public static void main(String[] args) throws UnknownHostException, IOException {
+    final static String charset = "GB2312";
+    final int PERSONNUM = 100;
+    Person[] persons;
 
-		// int port = 5555;
-		ServerSocket server = new ServerSocket(getPort());
+    public void go() throws IOException {
+        persons = new Person[PERSONNUM];
+        ExecutorService executor = Executors.newCachedThreadPool();
+        ServerSocket server = new ServerSocket(getPort());
 
-		// System.out.println("server将一直等待连接的到来");
+        while (true) {
 
-		BlockingQueue<Thread> list = new ArrayBlockingQueue<Thread>(10);
-		final ArrayList<Person> persons = new ArrayList<Person>(10);
-		int cnt = 0;
-		while (true) {
-			cnt++;
-			final Socket sock = server.accept();
-			final Person p = new Person(sock, cnt, null);// 创建一个玩家
-			persons.add(p);
+            int num = 0, count = 0;
+            while (num < PERSONNUM) {
+                if (persons[num] != null) {
+                    Log("用户" + num + "在线");
+                    count++;
+                }
+                num++;
+            }
+            Log("在线人数：" + count);
 
-			speak(sock, cnt + "");// 把id信息返回给客户机
+            final Socket client = server.accept();
 
-			speak(sock, "0:1:您正在等待对手的加入");
-			Person other = findFreePerson(persons, p);// 寻找一个空闲用户
+            int cnt = addClient(client);
+            if (cnt != -1) {
+                final Person player = new Person(client, cnt, null);
+                persons[cnt] = player;
+                task newtask = new task(player);
+                executor.execute(newtask);
+            }
+        }
 
-			if (other != null) {
-				speak(sock, "0:1:为您找到对手，开始游戏");
-				speak(sock, "0:2:0");// 黑棋
-				speak(other.getSocket(), "0:1:为您找到对手，开始游戏");
-				speak(other.getSocket(), "0:2:1");// 白棋
-				p.setOtherPerson(other);
-				other.setOtherPerson(p);
-			}
+    }
 
-			// 接受信息
-			Thread acceptThread = new Thread(new Runnable() {
+    int addClient(Socket client) {
+        int cnt = 0;
+        try {
+            while (persons[cnt] != null) {
+                cnt++;
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            try {
+                client.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            System.out.println("over flow");
+            return -1;
+        }
+        return cnt;
+    }
 
-				@Override
-				public void run() {
+    int getPort() throws IOException {
+        FileInputStream fis = new FileInputStream("server.conf");
+        InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+        BufferedReader br = new BufferedReader(isr);
+        String line = "";
+        String arrs[] = null;
+        int port = 0;
 
-					try {
-						while (true) {
-							String info = getInfo(sock);
+        if ((line = br.readLine()) != null) {
+            arrs = line.split("=");
+            port = Integer.parseInt(arrs[1]);
+            // System.out.println(arrs[0] + " " + arrs[1]);
+        } else {
+            System.out.println("Read server.conf failed!");
+        }
 
-							String s[] = info.split(":");
+        br.close();
+        isr.close();
+        fis.close();
+        return port;
+    }
 
-							int id = Integer.valueOf(s[0]);
+    // 从队列中找到不是自己的空闲的人
+    public Person findFreePerson(Person my) {
+        Person pe = null;
+        for (int i = 0; i < PERSONNUM; i++) {
+            if (persons[i] != null && persons[i].getOtherPerson() == null && i != my.getId()) {
+                pe = persons[i];
+                return pe;
+            }
+        }
+        return pe;
+    }
 
-							Person p = findById(persons, id);
+    public void Log(String str) {
+        System.out.println(str);
+    }
 
-							Person other = p.getOtherPerson();
+    class task implements Runnable {
 
-							if (other == null) {// 如果还没有对战敌人
+        private Person player;
 
-								speak(sock, "0:你还没有匹配到对手，请耐心等待...");
+        private BufferedReader reader;
 
-							} else if (other.getSocket().isClosed()) {// 如果你的对战敌人掉了，那么
+        public task(Person player) throws IOException {
+            this.player = player;
+            InputStreamReader isReader = new InputStreamReader(player.getSocket().getInputStream());
+            reader = new BufferedReader(isReader);
+        }
 
-								speak(sock, "0:对手断开了连接，正在等待新的对手");
+        public void run() {
+            try {
+                speak(player.getSocket(), "-1:0:" + player.getId()); // 把id信息返回给客户机
+                speak(player.getSocket(), "-1:1:您正在等待对手的加入");
+                while (true) {
 
-							} else {
+                    if (player.getSocket().isClosed()) {
+                        persons[player.getId()] = null;
+                        break;
+                    }
 
-								speak(other.getSocket(), info);
-							}
-							// System.out.println(info);
-						}
+                    if (player.getOtherPerson() == null) {
+                        Person other = findFreePerson(player);// 寻找一个空闲用户
 
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					} catch (Exception e) {
+                        if (other != null) {
+                            speak(player.getSocket(), "-1:1:为您找到对手，开始游戏");
+                            speak(player.getSocket(), "-1:2:0");// 黑棋
+                            speak(other.getSocket(), "-1:1:为您找到对手，开始游戏");
+                            speak(other.getSocket(), "-1:2:1");// 白棋
+                            player.setOtherPerson(other);
+                            other.setOtherPerson(player);
+                        }
+                    } else {
+                        String info = reader.readLine();
+                        if (info == null)
+                            continue;
+                        Person other = player.getOtherPerson();
 
-						try {
-							speak(p.getOtherPerson().getSocket(), "0:1:你的对手离开了游戏");
-						} catch (UnsupportedEncodingException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						} catch (IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-						p.getOtherPerson().setOtherPerson(null);
-						e.printStackTrace();
-					}
+                        if (other.getSocket().isClosed()) {// 如果你的对战敌人掉了，那么
+                            speak(player.getSocket(), "-1:-1");
+                            persons[other.getId()] = null;
+                            persons[player.getId()] = null;
+                            break;
+                        } else {
+                            speak(other.getSocket(), info);
+                        }
+                        // System.out.println(info);
+                    }
+                }
 
-				}
-			});
+            } catch (Exception e) {
+                try {
+                    // speak(player.getSocket(), "-1:-1");
+                    persons[player.getId()] = null;
+                    if (player.getOtherPerson() != null) {
+                        speak(player.getOtherPerson().getSocket(), "-1:-1");
+                        persons[player.getOtherPerson().getId()] = null;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                e.printStackTrace();
+            }
 
-			acceptThread.start();
+        }
 
-		}
+        public void speak(Socket sock, String content) throws UnsupportedEncodingException, IOException {
+            PrintWriter writer = new PrintWriter(sock.getOutputStream());
+            writer.println(content);
+            writer.flush();
+        }
 
-	}
-
-	public static int getPort() throws IOException {
-
-		FileInputStream fis = new FileInputStream("server.conf");
-		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
-		BufferedReader br = new BufferedReader(isr);
-		String line = "";
-		String arrs[] = null;
-		int port = 0;
-
-		if ((line = br.readLine()) != null) {
-			arrs = line.split("=");
-			port = Integer.parseInt(arrs[1]);
-			//System.out.println(arrs[0] + " " + arrs[1]);
-		} else {
-			System.out.println("Read server.conf failed!");
-		}
-
-		br.close();
-		isr.close();
-		fis.close();
-		return port;
-	}
-
-	// 读取输入流
-	public static String read(InputStream in, int begin, int len) throws IOException {
-
-		byte[] b = new byte[1024];
-		in.read(b, 0, len);
-		return new String(b, 0, len, charset);
-
-	}
-
-	// 将要发送的String消息打包成bytes发送
-	public static byte[] pack(String info) throws UnsupportedEncodingException {
-		byte b[] = info.getBytes(charset);
-		String len = b.length + "";
-		while (len.length() < 8) {
-			len = "0" + len;
-		}
-
-		String s = len + info;
-
-		return s.getBytes(charset);
-
-	}
-
-	// 从socket中获取打包过来的数据，先获取长度，再获取真正的内容
-	public static String getInfo(Socket socket) throws Exception {
-
-		InputStream in = socket.getInputStream();
-		byte b[] = new byte[1024];
-
-		String len = Server.read(in, 0, 8);
-
-		String info = Server.read(in, 0, Integer.valueOf(len));
-
-		return info;
-	}
-
-	// 从队列中找到不是自己的空闲的人
-	public static Person findFreePerson(ArrayList<Person> p, Person my) {
-		Person pe = null;
-		for (int i = 0; i < p.size(); i++) {
-			if (p.get(i).getOtherPerson() == null && p.get(i) != my) {
-				pe = p.get(i);
-				return pe;
-			}
-
-		}
-
-		return pe;
-	}
-
-	public static void speak(Socket sock, String content) throws UnsupportedEncodingException, IOException {
-
-		sock.getOutputStream().write(pack(content));
-	}
-
-	public static Person findById(ArrayList<Person> p, int id) {
-		for (int i = 0; i < p.size(); i++) {
-			if (p.get(i).getId() == id) {
-				return p.get(i);
-			}
-
-		}
-		return null;
-
-	}
+    }
 
 }

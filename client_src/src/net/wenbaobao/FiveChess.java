@@ -222,10 +222,8 @@ public class FiveChess extends JFrame implements ActionListener {
             try {
                 online = new Online(board, record);
             } catch (UnknownHostException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             } catch (IOException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
 
@@ -237,16 +235,16 @@ public class FiveChess extends JFrame implements ActionListener {
             con.add(split, BorderLayout.CENTER);
             con.validate();
             validate();
+            联机.setEnabled(false);
             record.something.setText("联机模式");
             record.chat.setText("");
             this.setTitle("联机比赛中...");
             board.lianji 	= true;
             board.computer 	= false;
             board.shuangren = false;
+            board.onlineStart = false;
+            board.onlineEnd   = false;
 
-            board.lianjichat = "";
-            board.lianjiX = -1;
-            board.lianjiY = -1;
         }
 
 

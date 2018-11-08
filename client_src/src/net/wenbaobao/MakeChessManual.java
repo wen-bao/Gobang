@@ -115,7 +115,19 @@ public class MakeChessManual extends JPanel implements ActionListener {
                 chat.setCaretPosition(chat.getDocument().getLength());
                 input.setText("");
                 input.requestFocus();
-            } else {
+            } else if(board.lianji){
+                if(board.strPersonColor == "black") {
+                    whosay = "黑棋 > ";
+                } else {
+                    whosay = "白棋 > ";
+                }
+                String str = whosay + input.getText() + "\n";
+                chat.append(str);
+                board.online.writer.println(board.OnlineId + ":1:" + str);
+                board.online.writer.flush();
+                input.setText("");
+                input.requestFocus();
+            }else {
                 if(board.strPersonColor == "black") {
                     whosay = "白棋 > ";
                 } else {
@@ -123,7 +135,6 @@ public class MakeChessManual extends JPanel implements ActionListener {
                 }
                 String str = whosay + input.getText() + "\n";
                 chat.append(str);
-                board.lianjichat = str;
                 chat.setCaretPosition(chat.getDocument().getLength());
                 input.setText("");
                 input.requestFocus();
