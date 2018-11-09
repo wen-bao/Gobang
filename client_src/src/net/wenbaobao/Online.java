@@ -29,7 +29,7 @@ public class Online {
         Client();
     }
 
-    final static String charset = "GB2312";
+    public final String charset = "GB2312";
 
     public static String id;
 
@@ -38,13 +38,9 @@ public class Online {
         // 与服务端建立连接
         final Socket socket = new Socket(host, port);
 
-        InputStreamReader streamReader = new InputStreamReader(socket.getInputStream());
+        InputStreamReader streamReader = new InputStreamReader(socket.getInputStream(), charset);
         reader = new BufferedReader(streamReader);
-        writer = new PrintWriter(socket.getOutputStream());
-
-        // 建立连接后获得输出流
-        OutputStream outputStream = socket.getOutputStream();
-
+        writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), charset));
 
         // 接受消息的进程
         Thread getThread = new Thread(new Runnable() {

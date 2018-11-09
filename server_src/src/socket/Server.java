@@ -17,9 +17,9 @@ import java.util.concurrent.*;
 //userID：1：xx 聊天
 //userID：2：x：y （x，y）处落子
 
-public class server2 {
+public class server {
     public static void main(String[] args) throws IOException {
-        new server2().go();
+        new server().go();
     }
 
     final static String charset = "GB2312";
@@ -120,7 +120,7 @@ public class server2 {
 
         public task(Person player) throws IOException {
             this.player = player;
-            InputStreamReader isReader = new InputStreamReader(player.getSocket().getInputStream());
+            InputStreamReader isReader = new InputStreamReader(player.getSocket().getInputStream(), charset);
             reader = new BufferedReader(isReader);
         }
 
@@ -181,7 +181,7 @@ public class server2 {
         }
 
         public void speak(Socket sock, String content) throws UnsupportedEncodingException, IOException {
-            PrintWriter writer = new PrintWriter(sock.getOutputStream());
+            PrintWriter writer = new PrintWriter(new OutputStreamWriter(sock.getOutputStream(), charset));
             writer.println(content);
             writer.flush();
         }
