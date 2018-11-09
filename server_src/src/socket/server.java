@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.text.SimpleDateFormat;
 
 // 发送消息的格式被规定为 userId:mode:[xx]
 
@@ -32,21 +33,11 @@ public class server {
         ServerSocket server = new ServerSocket(getPort());
 
         while (true) {
-
-            int num = 0, count = 0;
-            while (num < PERSONNUM) {
-                if (persons[num] != null) {
-                    Log("用户" + num + "在线");
-                    count++;
-                }
-                num++;
-            }
-            Log("在线人数：" + count);
-
             final Socket client = server.accept();
 
             int cnt = addClient(client);
             if (cnt != -1) {
+                log("get a client: " + cnt);
                 final Person player = new Person(client, cnt, null, false);
                 persons[cnt] = player;
                 task newtask = new task(player);
@@ -66,9 +57,9 @@ public class server {
             try {
                 client.close();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log("client close failed!");
             }
-            System.out.println("over flow");
+            log("persons over flow!");
             return -1;
         }
         return cnt;
@@ -96,24 +87,48 @@ public class server {
         return port;
     }
 
+    public void log(String str) {
+        Date date = new Date();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String time = df.format(date);
+
+        File file = new File("data/server.log");
+
+        Writer out = null;
+
+        try {
+            out = new FileWriter(file, true);
+            out.write(time + ":" + str + "\n");
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void speak(Socket sock, String content) throws UnsupportedEncodingException, IOException {
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(sock.getOutputStream(), charset));
+        writer.println(content);
+        writer.flush();
+    }
+
     // 从队列中找到不是自己的空闲的人
-    public Person findFreePerson(Person my) {
-        Person pe = null;
+    public synchronized void findFreePerson(Person my) throws UnsupportedEncodingException, IOException{
+        if(my.getStart()) return;
         for (int i = 0; i < PERSONNUM; i++) {
-            if (persons[i] != null && persons[i].getOtherPerson() == null && i != my.getId()) {
-                pe = persons[i];
-                return pe;
+            Person other = persons[i];
+            if (other != null && other.getOtherPerson() == null && i != my.getId()) {
+                speak(other.getSocket(), "-1:1:为您找到对手，开始游戏");
+                speak(other.getSocket(), "-1:2:1");// 白棋
+                speak(my.getSocket(), "-1:1:为您找到对手，开始游戏");
+                speak(my.getSocket(), "-1:2:0");// 黑棋
+                my.setStart(true);
+                other.setStart(true);
+                my.setOtherPerson(other);
+                other.setOtherPerson(my);
+                return;
             }
         }
-        return pe;
-    }
-
-    public synchronized boolean check(Person my) {
-        return !my.getStart();
-    }
-
-    public void Log(String str) {
-        System.out.println(str);
     }
 
     class task implements Runnable {
@@ -135,43 +150,33 @@ public class server {
                 while (true) {
 
                     if (player.getSocket().isClosed()) {
+                        log("client: " + player.getId() + " leave!");
                         persons[player.getId()] = null;
                         break;
                     }
 
-                    if (check(player)) {
-                        Person other = findFreePerson(player);// 寻找一个空闲用户
-
-                        if (other != null) {
-                            speak(player.getSocket(), "-1:1:为您找到对手，开始游戏");
-                            speak(player.getSocket(), "-1:2:0");// 黑棋
-                            speak(other.getSocket(), "-1:1:为您找到对手，开始游戏");
-                            speak(other.getSocket(), "-1:2:1");// 白棋
-                            player.setStart(true);
-                            other.setStart(true);
-                            player.setOtherPerson(other);
-                            other.setOtherPerson(player);
-                        }
+                    if (!player.start) {
+                        findFreePerson(player);
                     } else {
-                        String info = reader.readLine();
-                        if (info == null)
-                            continue;
                         Person other = player.getOtherPerson();
-
                         if (other.getSocket().isClosed()) {// 如果你的对战敌人掉了，那么
+                            log("client: " + player.getId() + " leave!");
                             speak(player.getSocket(), "-1:-1");
                             persons[other.getId()] = null;
                             persons[player.getId()] = null;
                             break;
                         } else {
-                            speak(other.getSocket(), info);
+                            String info = reader.readLine();
+                            if (info != null) {
+                                speak(other.getSocket(), info);
+                            }
                         }
-                        // System.out.println(info);
                     }
                 }
 
             } catch (Exception e) {
                 try {
+                    log("client: " + player.getId() + " leave!");
                     // speak(player.getSocket(), "-1:-1");
                     persons[player.getId()] = null;
                     if (player.getOtherPerson() != null) {
@@ -179,17 +184,11 @@ public class server {
                         persons[player.getOtherPerson().getId()] = null;
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    persons[player.getOtherPerson().getId()] = null;
                 }
-                e.printStackTrace();
+                //e.printStackTrace();
             }
 
-        }
-
-        public void speak(Socket sock, String content) throws UnsupportedEncodingException, IOException {
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(sock.getOutputStream(), charset));
-            writer.println(content);
-            writer.flush();
         }
 
     }
