@@ -108,7 +108,7 @@ public class server {
         return pe;
     }
 
-    public synchronized boolean check(Pserson my) {
+    public synchronized boolean check(Person my) {
         return !my.getStart();
     }
 
