@@ -9,9 +9,11 @@ PORT：指定端口
 ## 运行
 
 //windows
+
 build.bat
 
 //linux
+
 ./build.sh
 
 ./run
