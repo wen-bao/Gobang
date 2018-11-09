@@ -47,7 +47,7 @@ public class server {
 
             int cnt = addClient(client);
             if (cnt != -1) {
-                final Person player = new Person(client, cnt, null);
+                final Person player = new Person(client, cnt, null, false);
                 persons[cnt] = player;
                 task newtask = new task(player);
                 executor.execute(newtask);
@@ -97,7 +97,7 @@ public class server {
     }
 
     // 从队列中找到不是自己的空闲的人
-    public synchronized Person findFreePerson(Person my) {
+    public Person findFreePerson(Person my) {
         Person pe = null;
         for (int i = 0; i < PERSONNUM; i++) {
             if (persons[i] != null && persons[i].getOtherPerson() == null && i != my.getId()) {
@@ -106,6 +106,10 @@ public class server {
             }
         }
         return pe;
+    }
+
+    public synchronized boolean check(Pserson my) {
+        return !my.getStart();
     }
 
     public void Log(String str) {
@@ -135,7 +139,7 @@ public class server {
                         break;
                     }
 
-                    if (player.getOtherPerson() == null) {
+                    if (check(player)) {
                         Person other = findFreePerson(player);// 寻找一个空闲用户
 
                         if (other != null) {
@@ -143,6 +147,8 @@ public class server {
                             speak(player.getSocket(), "-1:2:0");// 黑棋
                             speak(other.getSocket(), "-1:1:为您找到对手，开始游戏");
                             speak(other.getSocket(), "-1:2:1");// 白棋
+                            player.setStart(true);
+                            other.setStart(true);
                             player.setOtherPerson(other);
                             other.setOtherPerson(player);
                         }

@@ -11,10 +11,13 @@ public class Person {
 
 	private Person otherPerson;
 
-	public Person(Socket socket, int id, Person otherPerson) {
+	public boolean start;
+
+	public Person(Socket socket, int id, Person otherPerson, boolean start) {
 		this.socket = socket;
 		this.id = id;
 		this.otherPerson = otherPerson;
+		this.start = start;
 	}
 
 	public int getId() {
@@ -23,6 +26,13 @@ public class Person {
 
 	public Socket getSocket() {
 		return this.socket;
+	}
+
+	public void setStart(boolean start) {
+		this.start = start;
+	}
+	public boolean getStart() {
+		return start;
 	}
 
 	public void setOtherPerson(Person other) {
