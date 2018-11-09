@@ -63,10 +63,7 @@ public class Online {
                                     id = s[2];
                                     board.OnlineId = id;
                                 } else if ("1".equals(s[1])) { // 系统消息
-                                    JOptionPane.showConfirmDialog(null, s[2]);
-                                    // Object[] options = {"新游戏", "退出", "取消"};
-                                    // JOptionPane.showOptionDialog(null, s[2], "提示", JOptionPane.YES_OPTION, 
-                                    // OptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+                                    JOptionPane.showMessageDialog(null, s[2]);
                                 } else if ("2".equals(s[1])) { // 分配棋子颜色
                                     board.onlineStart = true;
                                     if ("0".equals(s[2])) {
@@ -83,7 +80,7 @@ public class Online {
                                         board.waitOther = true;
                                     }
                                 } else { // 退出
-                                    JOptionPane.showConfirmDialog(null, "对手退出游戏");
+                                    JOptionPane.showMessageDialog(null, "对手退出游戏");
                                     board.onlineEnd = true;
                                 }
                             } else { // 来自对手
@@ -97,9 +94,6 @@ public class Online {
                                     board.setPiece(xx, yy, board.strOtherColor, board.otherColor);
                                     board.step++;
                                     board.waitOther = false;
-                                    // if(board.hadWin) {
-                                    // JOptionPane.showMessageDialog(null, board.strOtherColor + "胜利！");
-                                    // }
                                 }
                             }
                             System.out.println(info);

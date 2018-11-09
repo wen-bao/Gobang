@@ -97,7 +97,7 @@ public class server {
     }
 
     // 从队列中找到不是自己的空闲的人
-    public Person findFreePerson(Person my) {
+    public synchronized Person findFreePerson(Person my) {
         Person pe = null;
         for (int i = 0; i < PERSONNUM; i++) {
             if (persons[i] != null && persons[i].getOtherPerson() == null && i != my.getId()) {
