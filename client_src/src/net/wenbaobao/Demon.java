@@ -20,6 +20,7 @@ public class Demon extends JPanel implements ActionListener, Runnable {
 
     FiveBoard board = null;
     Rule rule 		= null;
+    FiveChess fc    = null;
 
     LinkedList<Point> ChessManual = null;
 
@@ -31,8 +32,9 @@ public class Demon extends JPanel implements ActionListener, Runnable {
 
 
 
-    public Demon(FiveBoard board) {
+    public Demon(FiveBoard board, FiveChess fcc) {
         this.board 		= board;
+        this.fc         = fcc;
         board.DemonRun 	= true;
 
         rule 	= new Rule(board, board.point);
@@ -100,7 +102,7 @@ public class Demon extends JPanel implements ActionListener, Runnable {
         }
 
         if (e.getSource() == replay) {
-            board = new FiveBoard(35, 35, 15, 15);
+            board = new FiveBoard(35, 35, 15, 15, fc);
             board.DemonRun = true;
             board.computer = false;
             rule = new Rule(board, board.point);
@@ -127,7 +129,7 @@ public class Demon extends JPanel implements ActionListener, Runnable {
 
             if (!(自动演示.isAlive())) {
                 自动演示 	= new Thread(this);
-                board 	= new FiveBoard(35, 35, 15, 15);
+                board 	= new FiveBoard(35, 35, 15, 15, fc);
 
                 board.DemonRun = true;
                 board.computer = false;

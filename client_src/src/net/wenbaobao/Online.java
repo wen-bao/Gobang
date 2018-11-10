@@ -32,18 +32,20 @@ public class Online {
     public final String charset = "GB2312";
 
     public static String id;
+    public Thread getThread;
+    Socket socket;
 
     public void Client() throws UnknownHostException, IOException {
         getServer();
         // 与服务端建立连接
-        final Socket socket = new Socket(host, port);
+        socket = new Socket(host, port);
 
         InputStreamReader streamReader = new InputStreamReader(socket.getInputStream(), charset);
         reader = new BufferedReader(streamReader);
         writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), charset));
 
         // 接受消息的进程
-        Thread getThread = new Thread(new Runnable() {
+        getThread = new Thread(new Runnable() {
 
             @Override
             public void run() {
@@ -51,12 +53,20 @@ public class Online {
                     // id = getInfo(socket);
                     // System.out.println("您已经进入游戏,您的游戏id号码为" + id);
 
-                    while (true) {
+                    while (!socket.isClosed()) {
                         try {
+
+                            if(!board.lianji || board.onlineEnd) {
+                                socket.close();
+                                break;
+                            }
+
                             String info = reader.readLine();
                             if(info == null) continue;
 
                             String s[] = info.split(":");
+
+                            //System.out.println(info);
 
                             if ("-1".equals(s[0])) { // 来自系统
                                 if ("0".equals(s[1])) { // 分配id
@@ -79,14 +89,58 @@ public class Online {
                                         board.strOtherColor = "black";
                                         board.waitOther = true;
                                     }
+                                } else if("=_=".equals(s[1])){ // 对方换人
+                                    JOptionPane.showMessageDialog(null, "正在匹配更强的对手！");
+                                    board.onlineAgain = true;
+                                    board.fc.solveOnline();
+                                    //board.onlineEnd = true;
+                                } else if("==".equals(s[1])){ // 我方换人
+                                    JOptionPane.showMessageDialog(null, "正在匹配对手！");
+                                    board.onlineAgain = true;
+                                    board.fc.solveOnline();
+                                    //board.onlineEnd = true;
                                 } else { // 退出
                                     JOptionPane.showMessageDialog(null, "对手退出游戏");
-                                    board.onlineEnd = true;
+                                    Object[] options ={ "重新匹配", "退出游戏" };
+                                    int m = JOptionPane.showOptionDialog(null, "是否寻找新玩家？", "To be or not to be",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                                    if(m == 0) { 
+                                        //JOptionPane.showMessageDialog(null, "正在开始!");
+                                        board.onlineAgain = true;
+                                        board.fc.solveOnline();
+                                        board.onlineStart = false;
+                                    } else {
+                                        System.exit(0);
+                                        //System.out.println("换人");
+                                    }
+                                    //board.onlineEnd = true;
                                 }
                             } else { // 来自对手
-                                Log("PersonID");
                                 if ("1".equals(s[1])) {
                                     record.chat.append(s[2]+"\n");
+                                } else if ("0".equals(s[1])) { //复仇
+                                    if("0".equals(s[2])) { //是否复仇
+                                        Object[] options ={ "同意", "换人" };
+                                        int m = JOptionPane.showOptionDialog(null, "对方前来复仇，是否同意？", "To be or not to be",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                                        if(m == 0) { 
+                                            JOptionPane.showMessageDialog(null, "正在开始！");
+                                            writer.println(id + ":0:1");
+                                            writer.flush();
+                                        } else {
+                                            writer.println(id + ":0:2");
+                                            writer.flush();
+                                            writer.println("=_=");
+                                            writer.flush();
+                                            //System.out.println("换人");
+                                        }
+                                    } else if("1".equals(s[2])) { //同意复仇
+                                        JOptionPane.showMessageDialog(null, "对方接受挑战，正在开始！");
+                                    } else { //不同意复仇
+                                        JOptionPane.showMessageDialog(null, "对方拒绝挑战，正在重新匹配");
+                                        writer.println("=_=");
+                                        writer.flush();
+                                    }
+                                    board.onlineAgain = true;
+                                    board.fc.solveOnline();
                                 } else {
                                     int xx = Integer.valueOf(s[2]);
                                     int yy = Integer.valueOf(s[3]);
@@ -96,7 +150,6 @@ public class Online {
                                     board.waitOther = false;
                                 }
                             }
-                            System.out.println(info);
                         } catch (Exception e) {
                             continue;
                         }
@@ -109,6 +162,19 @@ public class Online {
             }
         });
         getThread.start();
+    }
+
+    public void killed() {
+        //System.out.println("killed");
+        writer.println("@");
+        writer.flush();
+        try {
+            socket.close();
+            board.lianji = false;
+            board.onlineEnd = true;
+        } catch(Exception ex) {
+            //System.out.println("close failed!");
+        }
     }
 
     public static void getServer() throws IOException {
@@ -128,17 +194,10 @@ public class Online {
                     port = Integer.parseInt(arr[1]);
                 }
             } else {
-                System.out.println("Read client.conf failed!");
+                JOptionPane.showMessageDialog(null, "client.conf 打开失败", "错误信息", JOptionPane.ERROR_MESSAGE);
+                System.exit(1);
             }
         }
 
-    }
-
-    public static void Log(String str) {
-        System.out.println(str);
-    }
-
-    public void runOver(String message) {
-        JOptionPane.showMessageDialog(null, message);
     }
 }

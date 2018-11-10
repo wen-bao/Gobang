@@ -29,6 +29,8 @@ public class FiveChess extends JFrame implements ActionListener {
     Dimension   screensize   =   Toolkit.getDefaultToolkit().getScreenSize();
 
     boolean com = true;
+    boolean shuangren = false;
+    boolean lianji    = false;
     int lev = 1;
 
     public FiveChess() {
@@ -86,9 +88,9 @@ public class FiveChess extends JFrame implements ActionListener {
 
 
         setJMenuBar(bar);
-        setTitle(制作棋谱.getText());
+        setTitle("五子棋 正在人机对战...");
 
-        board 	= new FiveBoard(35, 35, 15, 15);
+        board 	= new FiveBoard(35, 35, 15, 15, this);
         record 	= board.record;
         con 	= getContentPane();
 
@@ -118,8 +120,11 @@ public class FiveChess extends JFrame implements ActionListener {
     private void reset() {
         con.removeAll();
 
-        board 	= new FiveBoard(35, 35, 15, 15);
+        board 	= new FiveBoard(35, 35, 15, 15, this);
         record 	= board.record;
+        board.lianji = false;
+        board.computer = false;
+        board.shuangren = false;
 
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, board, record);
 
@@ -135,16 +140,27 @@ public class FiveChess extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         if(e.getSource() == 新游戏) {
-
-            reset();
-            board.computer = com;
-            board.ai.level = lev;
+            if(lianji) {
+                solveOnline();
+            } else if(com) {
+                solveComputer();
+            } else if(shuangren) {
+                solveShuangren();
+            } else {
+                solveComputer();
+            }
         }
 
         if (e.getSource() == 制作棋谱) {
-            reset();
-            board.computer = com;
-            board.ai.level = lev;
+            if(lianji) {
+                solveOnline();
+            } else if(com) {
+                solveComputer();
+            } else if(shuangren) {
+                solveShuangren();
+            } else {
+                solveComputer();
+            }
 
             保存棋谱.setEnabled(true);
             this.setTitle(制作棋谱.getText());
@@ -185,8 +201,8 @@ public class FiveChess extends JFrame implements ActionListener {
 
                     inOne.close();
                     inTwo.close();
-                    FiveBoard board = new FiveBoard(35, 35, 15, 15);
-                    demon = new Demon(board);
+                    FiveBoard board = new FiveBoard(35, 35, 15, 15, this);
+                    demon = new Demon(board, this);
                     demon.setChessManual(ChessManual);
                     con.add(demon, BorderLayout.CENTER);
                     con.validate();
@@ -215,87 +231,131 @@ public class FiveChess extends JFrame implements ActionListener {
         }
 
         if(e.getSource() == 联机) {
-            con.removeAll();
-
-            board = new FiveBoard(35, 35, 15, 15);
-            record = board.record;
-            try {
-                online = new Online(board, record);
-            } catch (UnknownHostException e1) {
-                e1.printStackTrace();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-
-            JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, board, record);
-            split.setDividerSize(5);
-            split.setDividerLocation(550);
-            split.setEnabled(false);
-
-            con.add(split, BorderLayout.CENTER);
-            con.validate();
-            validate();
-            联机.setEnabled(false);
-            record.something.setText("联机模式");
-            record.chat.setText("");
-            this.setTitle("联机比赛中...");
-            board.lianji 	= true;
-            board.computer 	= false;
-            board.shuangren = false;
-            board.onlineStart = false;
-            board.onlineEnd   = false;
-
+            solveOnline();
         }
 
 
         if(e.getSource() == 双人) {
-            reset();
-            record.something.setText("双人模式");
-            board.shuangren = true;
-            record.chat.setText("");
-            com = false;
-            board.lianji 	= false;
-            board.computer 	= false;
-            board.shuangren = true;
+            solveShuangren();
         }
 
         if(e.getSource() == 初级) {
-            reset();
-            record.something.setText("人机模式  黑棋");
-            record.chat.append("AI > 你好，请多指教！\n");
-            com = true;
-            board.lianji 	= false;
-            board.computer 	= true;
-            board.shuangren = false;
-            lev = 1;
-            board.ai.level = 1;
+            solveComputer();
         }
 
         if(e.getSource() == 中级) {
-            reset();
-            record.something.setText("人机模式  黑棋");
-            record.chat.append("AI > 你好，请多指教！\n");
-            com = true;
-            board.lianji 	= false;
-            board.computer 	= true;
-            board.shuangren = false;
-            lev = 2;
-            board.ai.level = 2;
+            solveComputer();
         }
 
         if(e.getSource() == 高级) {
-            reset();
-            record.something.setText("人机模式  黑棋");
-            record.chat.append("AI > 你好，请多指教！\n");
-            com = true;
-            board.lianji 	= false;
-            board.computer 	= true;
-            board.shuangren = false;
-            lev = 3;
-            board.ai.level = 3;
+            solveComputer();
+        }
+    }
+
+    public boolean check() {
+        if(!board.lianji) return true;
+
+        Object[] options ={ "继续联机", "切换模式" };
+        int m = JOptionPane.showOptionDialog(null, "确定不再联机？", "To be or not to be",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+        if(m == 0) { 
+            return false;
+        } else {
+            board.online.killed();
+            online = null;
+        }
+        return true;
+    }
+
+    public void solveShuangren() {
+        if(!check()) return;
+        reset();
+        record.something.setText("双人模式");
+        record.chat.setText("");
+        this.setTitle("双人对战中...");
+        com = false;
+        lianji = false;
+        shuangren = true;
+        board.shuangren = true;
+    }
+
+    public void solveComputer() {
+        if(!check()) return;
+        reset();
+        record.something.setText("人机模式  黑棋");
+        record.chat.setText("AI > 你好，请多指教！\n");
+        this.setTitle("人机对战中...");
+        com = true;
+        lianji = false;
+        shuangren = false;
+        board.computer 	= true;
+        board.ai.level = 1;
+    }
+
+    public void solveOnline() {
+
+        if(board.lianji && !board.onlineAgain) {
+            if(board.onlineStart) {
+                if(!board.onlineEnd) {
+                    JOptionPane.showMessageDialog(null, "请完成当前棋局！");
+                    return;
+                }
+            } else {
+                JOptionPane.showMessageDialog(null, "正在努力寻找对手！");
+                return;
+            }
         }
 
+        if(board.onlineAgain) {
+            //while(!board.hadWin);
+            int num = board.step + 2;
+            while(num > 0) {
+                board.record.solveUndo();
+                num --;
+            }
+            board.hadWin = false;
+            board.record.chat.setText("");
+            board.onlineAgain = false;
+            //System.out.printf("clear one!");
+            return;
+        }
 
+        con.removeAll();
+
+        board = new FiveBoard(35, 35, 15, 15, this);
+        record = board.record;
+
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, board, record);
+        split.setDividerSize(5);
+        split.setDividerLocation(550);
+        split.setEnabled(false);
+
+        con.add(split, BorderLayout.CENTER);
+        con.validate();
+        validate();
+        //联机.setEnabled(false);
+        record.something.setText("联机模式");
+        record.chat.setText("");
+        this.setTitle("联机比赛中...");
+        
+        board.lianji 	= true;
+        board.computer 	= false;
+        board.shuangren = false;
+        board.onlineStart = false;
+        board.onlineEnd   = false;
+        board.onlineAgain = false;
+        lianji          = true;
+        shuangren       = false;
+        com             = false;
+
+        try {
+            online = new Online(board, record);
+        } catch (UnknownHostException e1) {
+            JOptionPane.showMessageDialog(null, "服务器连接失败", "错误信息", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        } catch (IOException e1) {
+            JOptionPane.showMessageDialog(null, "client.conf 打开失败", "错误信息", JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
     }
 
 

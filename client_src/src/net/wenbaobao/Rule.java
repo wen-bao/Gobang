@@ -52,6 +52,24 @@ public class Rule {
             } else {
                 JOptionPane.showMessageDialog(null, "很遗憾被傻逼AI击败!");
             }
+        } else if(win && board.lianji) {
+            board.whoWin = colorT;
+            if(colorT == board.strPersonColor) {
+                JOptionPane.showMessageDialog(null, "恭喜击败对方!");
+            } else {
+                JOptionPane.showMessageDialog(null, "很遗憾被对方击败!");
+                Object[] options ={ "复仇", "换人" };  //自定义按钮上的文字
+                int m = JOptionPane.showOptionDialog(null, "是否复仇？", "To be or not to be",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+                if(m == 0) {
+                    //System.out.println("复仇");
+                    board.online.writer.println(board.online.id + ":0:0");
+                    board.online.writer.flush();
+                } else {
+                    board.online.writer.println("=_=");
+                    board.online.writer.flush();
+                    //System.out.println("换人");
+                }
+            }
         } else if(win) {
             board.whoWin = colorT;
             JOptionPane.showMessageDialog(null, colorT + "胜利！");

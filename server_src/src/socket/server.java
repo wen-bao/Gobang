@@ -14,9 +14,16 @@ import java.text.SimpleDateFormat;
 //-1：2：0  系统分配黑棋    -1：2：1   系统分配白棋
 //-1:-1    退出
 
-//用户id为大于零的整数
+//用户id为大于等于零的整数
 //userID：1：xx 聊天
 //userID：2：x：y （x，y）处落子
+//userID: 0:0 复仇
+//userID: 0:1 同意复仇
+//userID: 0:2 不同意复仇
+
+//特殊格式 =_= 换人
+//== 系统同意换人
+//@  请求关机
 
 public class server {
     public static void main(String[] args) throws IOException {
@@ -163,12 +170,26 @@ public class server {
                             log("client: " + player.getId() + " leave!");
                             speak(player.getSocket(), "-1:-1");
                             persons[other.getId()] = null;
-                            persons[player.getId()] = null;
-                            break;
+                            player.setOtherPerson(null);
+                            player.setStart(false);
                         } else {
                             String info = reader.readLine();
                             if (info != null) {
-                                speak(other.getSocket(), info);
+                                if("=_=".equals(info)) {
+                                    System.out.println("changed!");
+                                    speak(player.getSocket(), "-1:==");
+                                    speak(other.getSocket(), "-1:=_=");
+                                    other.setOtherPerson(null);
+                                    other.setStart(false);
+                                    player.setOtherPerson(null);
+                                    player.setStart(false);
+                                } else if("@".equals(info)){
+                                    log("client: " + player.getId() + " leave!");
+                                    persons[player.getId()] = null;
+                                    break;
+                                } else {
+                                    speak(other.getSocket(), info);
+                                }
                             }
                         }
                     }

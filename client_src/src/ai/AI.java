@@ -86,7 +86,7 @@ public class AI {
 
         aimPoint = serach();
 
-        System.out.println(aimPoint.x + " " + aimPoint.y);
+        //System.out.println(aimPoint.x + " " + aimPoint.y);
 
         PutChess(aimPoint, White);
 

@@ -145,56 +145,55 @@ public class MakeChessManual extends JPanel implements ActionListener {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == buttonUndo) {
-
-            int position = text.getText().lastIndexOf("#");
-
-            if (position != -1) {
-                text.replaceRange("", position, text.getText().length());
-            }
-
-            if (ChessManual.size() > 0) {
-
-                Point lastStep = (Point) ChessManual.getLast();
-                ChessManual.removeLast();
-
-                int clickX = lastStep.x;
-                int clickY = lastStep.y;
-
-                board.ai.remove(clickX, clickY);
-                board.step--;
-
-                // System.out.println(clickX+"_"+clickY);
-                FivePiece piece = point[clickX][clickY].getPiece();
-                board.hadWin = false;
-                if (piece.colorType().equals(board.whiteColor)) {
-
-                    piece.hide();
-
-                    piece = new FivePiece(0, null, board.unitWidth - 4, board.unitHeight - 4, board, 0, Color.black);
-
-                    point[clickX][clickY].setPiece(piece, board);
-                    board.whiteRun = true;
-                    board.blackRun = false;
-
-                } else if (piece.colorType().equals(board.blackColor)) {
-
-                    piece.hide();
-
-                    piece = new FivePiece(0, null, board.unitWidth - 4, board.unitHeight - 4, board, 0, Color.black);
-
-                    point[clickX][clickY].setPiece(piece, board);
-                    board.blackRun = true;
-                    board.whiteRun = false;
-                }
-            }
+            solveUndo();
         }
 
         if (e.getSource() == sent) {
             sentinfo();
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public void solveUndo() {
+        int position = text.getText().lastIndexOf("#");
+
+        if (position != -1) {
+            text.replaceRange("", position, text.getText().length());
+        }
+
+        if (ChessManual.size() > 0) {
+
+            Point lastStep = (Point) ChessManual.getLast();
+            ChessManual.removeLast();
+
+            int clickX = lastStep.x;
+            int clickY = lastStep.y;
+
+            board.ai.remove(clickX, clickY);
+            board.step--;
+
+            // System.out.println(clickX+"_"+clickY);
+            FivePiece piece = point[clickX][clickY].getPiece();
+            board.hadWin = false;
+            if (piece.colorType().equals(board.whiteColor)) {
+
+                piece.hide();
+
+                piece = new FivePiece(0, null, board.unitWidth - 4, board.unitHeight - 4, board, 0, Color.black);
+                point[clickX][clickY].setPiece(piece, board);
+                board.whiteRun = true;
+                board.blackRun = false;
+            } else if (piece.colorType().equals(board.blackColor)) {
+                piece.hide();
+                piece = new FivePiece(0, null, board.unitWidth - 4, board.unitHeight - 4, board, 0, Color.black);
+                point[clickX][clickY].setPiece(piece, board);
+                board.blackRun = true;
+                board.whiteRun = false;
+            }
         }
     }
 

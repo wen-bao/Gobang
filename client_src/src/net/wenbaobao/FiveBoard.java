@@ -10,6 +10,7 @@ import ai.*;
 @SuppressWarnings("serial")
 public class FiveBoard extends JPanel implements MouseListener, MouseMotionListener {
 
+    public FiveChess fc;
     public AI ai;
     public Online online;
     public String OnlineId;
@@ -46,11 +47,14 @@ public class FiveBoard extends JPanel implements MouseListener, MouseMotionListe
     public Color otherColor = null;
     public boolean onlineStart = false;
     public boolean onlineEnd   = false;
+    public boolean onlineAgain = false;
     public int personX, personY;
 
     public MakeChessManual record = null;
 
-    public FiveBoard(int w, int h, int r, int c) {
+    public FiveBoard(int w, int h, int r, int c, FiveChess fcc) {
+
+        fc = fcc;
 
         this.unitWidth = w;
         this.unitHeight = h;
@@ -186,7 +190,13 @@ public class FiveBoard extends JPanel implements MouseListener, MouseMotionListe
                 } else {
                     JOptionPane.showMessageDialog(null, "已经被AI击败!");
                 }
-            } else {
+            } else if(lianji){
+                if(whoWin == strPersonColor) {
+                    JOptionPane.showMessageDialog(null, "恭喜你战胜对手！");
+                } else {
+                    JOptionPane.showMessageDialog(null, "很遗憾被对方击败！");
+                }
+            }else {
                 JOptionPane.showMessageDialog(null, whoWin + "胜利！");
             }
         } else if (DemonRun) {
@@ -221,7 +231,7 @@ public class FiveBoard extends JPanel implements MouseListener, MouseMotionListe
             JOptionPane.showMessageDialog(null, "正在等待对方落子");
             return;
         }
-        setPiece(clickX, clickY, blackColor, personColor);
+        setPiece(clickX, clickY, strPersonColor, personColor);
         try {
             online.writer.println(OnlineId + ":2:" + clickX + ":" + clickY);
             online.writer.flush();
