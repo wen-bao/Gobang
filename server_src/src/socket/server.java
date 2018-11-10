@@ -176,7 +176,7 @@ public class server {
                             String info = reader.readLine();
                             if (info != null) {
                                 if("=_=".equals(info)) {
-                                    System.out.println("changed!");
+                                    //System.out.println("changed!");
                                     speak(player.getSocket(), "-1:==");
                                     speak(other.getSocket(), "-1:=_=");
                                     other.setOtherPerson(null);
@@ -186,6 +186,7 @@ public class server {
                                 } else if("@".equals(info)){
                                     log("client: " + player.getId() + " leave!");
                                     persons[player.getId()] = null;
+									speak(other.getSocket(), "-1:-1");
                                     break;
                                 } else {
                                     speak(other.getSocket(), info);
