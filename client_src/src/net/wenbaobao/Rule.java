@@ -62,11 +62,11 @@ public class Rule {
                 int m = JOptionPane.showOptionDialog(null, "是否复仇？", "To be or not to be",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                 if(m == 0) {
                     //System.out.println("复仇");
-                    board.online.writer.println(board.online.id + ":0:0");
-                    board.online.writer.flush();
+                    board.client.writer.println("1:0:0");
+                    board.client.writer.flush();
                 } else {
-                    board.online.writer.println("=_=");
-                    board.online.writer.flush();
+                    board.client.writer.println("&");
+                    board.client.writer.flush();
                     //System.out.println("换人");
                 }
             }

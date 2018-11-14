@@ -11,7 +11,7 @@ import java.util.LinkedList;
 @SuppressWarnings("serial")
 public class FiveChess extends JFrame implements ActionListener {
     FiveBoard board 		= null;
-    Online online 			= null;
+    Client client 			= null;
     Demon demon 			= null;
     MakeChessManual record 	= null;
     Container con 			= null;
@@ -260,8 +260,8 @@ public class FiveChess extends JFrame implements ActionListener {
         if(m == 0) { 
             return false;
         } else {
-            board.online.killed();
-            online = null;
+            board.client.killed();
+            //online = null;
         }
         return true;
     }
@@ -347,13 +347,12 @@ public class FiveChess extends JFrame implements ActionListener {
         shuangren       = false;
         com             = false;
 
-        try {
-            online = new Online(board, record);
-        } catch (UnknownHostException e1) {
+        try{
+            client = new Client(board, record);
+            board.client.writer.println("$");
+            board.client.writer.flush();
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "服务器连接失败", "错误信息", JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
-        } catch (IOException e1) {
-            JOptionPane.showMessageDialog(null, "client.conf 打开失败", "错误信息", JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
     }

@@ -1,7 +1,7 @@
 rm -rf data/server.jar
 cd src
-javac -encoding utf-8 socket/*.java -d ../data/
+javac -encoding utf-8 -cp ../lib/*.jar online/*.java -d ../data/
 cd ..
 jar -cvfm data/server.jar MANIFEST.MF -C data/ .
-rm -rf data/socket
+rm -rf data/online
 gcc -w src/run.c -o run

@@ -123,8 +123,8 @@ public class MakeChessManual extends JPanel implements ActionListener {
                 }
                 String str = whosay + input.getText() + "\n";
                 chat.append(str);
-                board.online.writer.println(board.OnlineId + ":1:" + str);
-                board.online.writer.flush();
+                board.client.writer.println("1:1:" + str);
+                board.client.writer.flush();
                 input.setText("");
                 input.requestFocus();
             }else {

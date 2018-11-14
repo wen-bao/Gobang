@@ -8,7 +8,7 @@ import java.util.Scanner;
 import javax.swing.JOptionPane;
 import javax.swing.JSplitPane;
 
-public class Online {
+public class Client {
 
     FiveBoard board = null;
     MakeChessManual record = null;
@@ -21,21 +21,21 @@ public class Online {
     static String host = "47.95.120.196";
     static int port = 5555;
 
-    public Online(FiveBoard board, MakeChessManual record) throws UnknownHostException, IOException {
+    public Client(FiveBoard board, MakeChessManual record) throws UnknownHostException, IOException {
 
         this.board = board;
         this.record = record;
-        board.online = this;
-        Client();
+        board.client = this;
+        go();
     }
 
-    public final String charset = "GB2312";
+    public final String charset = "UTF-8";
 
     public static String id;
     public Thread getThread;
     Socket socket;
 
-    public void Client() throws UnknownHostException, IOException {
+    public void go() throws UnknownHostException, IOException {
         getServer();
         // 与服务端建立连接
         socket = new Socket(host, port);
@@ -50,8 +50,6 @@ public class Online {
             @Override
             public void run() {
                 try {
-                    // id = getInfo(socket);
-                    // System.out.println("您已经进入游戏,您的游戏id号码为" + id);
 
                     while (!socket.isClosed()) {
                         try {
@@ -68,11 +66,8 @@ public class Online {
 
                             //System.out.println(info);
 
-                            if ("-1".equals(s[0])) { // 来自系统
-                                if ("0".equals(s[1])) { // 分配id
-                                    id = s[2];
-                                    board.OnlineId = id;
-                                } else if ("1".equals(s[1])) { // 系统消息
+                            if ("0".equals(s[0])) { // 来自系统
+                                if ("1".equals(s[1])) { // 系统消息
                                     JOptionPane.showMessageDialog(null, s[2]);
                                 } else if ("2".equals(s[1])) { // 分配棋子颜色
                                     board.onlineStart = true;
@@ -89,13 +84,8 @@ public class Online {
                                         board.strOtherColor = "black";
                                         board.waitOther = true;
                                     }
-                                } else if("=_=".equals(s[1])){ // 对方换人
-                                    JOptionPane.showMessageDialog(null, "正在匹配更强的对手！");
-                                    board.onlineAgain = true;
-                                    board.fc.solveOnline();
-                                    //board.onlineEnd = true;
-                                } else if("==".equals(s[1])){ // 我方换人
-                                    JOptionPane.showMessageDialog(null, "正在匹配对手！");
+                                } else if("%".equals(s[1])){ // 换人
+                                    //JOptionPane.showMessageDialog(null, "正在匹配更强的对手！");
                                     board.onlineAgain = true;
                                     board.fc.solveOnline();
                                     //board.onlineEnd = true;
@@ -105,30 +95,30 @@ public class Online {
                                     int m = JOptionPane.showOptionDialog(null, "是否寻找新玩家？", "To be or not to be",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                                     if(m == 0) { 
                                         //JOptionPane.showMessageDialog(null, "正在开始!");
+                                        writer.println("$\n");
+                                        writer.flush();
                                         board.onlineAgain = true;
                                         board.fc.solveOnline();
                                         board.onlineStart = false;
                                     } else {
                                         System.exit(0);
-                                        //System.out.println("换人");
                                     }
-                                    //board.onlineEnd = true;
                                 }
                             } else { // 来自对手
                                 if ("1".equals(s[1])) {
                                     record.chat.append(s[2]+"\n");
                                 } else if ("0".equals(s[1])) { //复仇
-                                    if("0".equals(s[2])) { //是否复仇
+                                    if("0".equals(s[2])) { //是否同意复仇
                                         Object[] options ={ "同意", "换人" };
                                         int m = JOptionPane.showOptionDialog(null, "对方前来复仇，是否同意？", "To be or not to be",JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
                                         if(m == 0) { 
                                             JOptionPane.showMessageDialog(null, "正在开始！");
-                                            writer.println(id + ":0:1");
+                                            writer.println("1:0:1\n");
                                             writer.flush();
                                         } else {
-                                            writer.println(id + ":0:2");
+                                            writer.println("1:0:2\n");
                                             writer.flush();
-                                            writer.println("=_=");
+                                            writer.println("$");
                                             writer.flush();
                                             //System.out.println("换人");
                                         }
@@ -136,7 +126,7 @@ public class Online {
                                         JOptionPane.showMessageDialog(null, "对方接受挑战，正在开始！");
                                     } else { //不同意复仇
                                         JOptionPane.showMessageDialog(null, "对方拒绝挑战，正在重新匹配");
-                                        writer.println("=_=");
+                                        writer.println("$");
                                         writer.flush();
                                     }
                                     board.onlineAgain = true;
@@ -154,19 +144,19 @@ public class Online {
                             continue;
                         }
 
-                    }
+                    } //end while
                 } catch (Exception e1) {
                     e1.printStackTrace();
-                }
+                } //end try
 
-            }
-        });
+            } // end run
+        }); // end getThread
         getThread.start();
-    }
+    } // end go
 
     public void killed() {
         //System.out.println("killed");
-        writer.println("@");
+        writer.println("@\n");
         writer.flush();
         try {
             socket.close();

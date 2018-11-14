@@ -12,7 +12,7 @@ public class FiveBoard extends JPanel implements MouseListener, MouseMotionListe
 
     public FiveChess fc;
     public AI ai;
-    public Online online;
+    public Client client;
     public String OnlineId;
     public FivePoint point[][];
     public FivePiece piece[][];
@@ -233,8 +233,8 @@ public class FiveBoard extends JPanel implements MouseListener, MouseMotionListe
         }
         setPiece(clickX, clickY, strPersonColor, personColor);
         try {
-            online.writer.println(OnlineId + ":2:" + clickX + ":" + clickY);
-            online.writer.flush();
+            client.writer.println("1:2:" + clickX + ":" + clickY + "\n");
+            client.writer.flush();
         } catch (Exception ex) {
             ex.printStackTrace();
         }

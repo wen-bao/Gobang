@@ -1,3 +1,4 @@
 Manifest-Version: 2.0
-Main-Class: socket.server
+Class-Path: ../lib/netty.jar
+Main-Class: online.Server
 
