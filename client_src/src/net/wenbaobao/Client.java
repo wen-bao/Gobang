@@ -29,7 +29,7 @@ public class Client {
         go();
     }
 
-    public final String charset = "UTF-8";
+    public final String charset = "utf-8";
 
     public static String id;
     public Thread getThread;

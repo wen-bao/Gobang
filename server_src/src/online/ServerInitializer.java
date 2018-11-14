@@ -8,6 +8,8 @@ import io.netty.handler.codec.Delimiters;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
+import java.nio.charset.*;
+
 public class ServerInitializer extends
 		ChannelInitializer<SocketChannel> {
 
@@ -15,9 +17,10 @@ public class ServerInitializer extends
     public void initChannel(SocketChannel ch) throws Exception {
 		ChannelPipeline pipeline = ch.pipeline();
 
+        Charset cs = Charset.forName("UTF-8");
         pipeline.addLast("framer", new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
-        pipeline.addLast("decoder", new StringDecoder());
-        pipeline.addLast("encoder", new StringEncoder());
+        pipeline.addLast("decoder", new StringDecoder(cs));
+        pipeline.addLast("encoder", new StringEncoder(cs));
         pipeline.addLast("handler", new ServerHandler());
 
         Log log = new Log();
